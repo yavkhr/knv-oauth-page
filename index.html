@@ -122,8 +122,8 @@
       "<h1>Підключити Classroom</h1>" +
       "<p>Натисни кнопку — відкриється Google, де треба залогінитись і дозволити доступ.</p>" +
       "<button id=\"go\">Підключити Classroom</button>" +
-      "<a class=\"btn alt\" id=\"external\" href=\"" + esc(authUrl()) + "\">Відкрити в браузері</a>" +
-      "<p class=\"note\">Якщо Google покаже список акаунтів — натисни на рядок зі своєю поштою, а не на фото (аватар). Інакше тебе відкине в налаштування акаунта.</p>";
+      "<a class=\"btn alt\" id=\"external\" target=\"_blank\" rel=\"noopener\" href=\"" + esc(authUrl()) + "\">Відкрити в браузері</a>" +
+      "<p class=\"note\">Якщо ти відкрив це посилання всередині Telegram — натисни «Відкрити в браузері», щоб Google не заблокував вхід. І якщо Google покаже список акаунтів — натисни на рядок зі своєю поштою, а не на фото (аватар).</p>";
     document.getElementById("go").addEventListener("click", function () {
       window.location.href = authUrl();
     });
