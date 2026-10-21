@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Підключити Classroom</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #17212b; color: #f2f5f7; line-height: 1.5;
+  }
+  .card { max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p { margin: 0 0 14px; color: #b9c4cf; font-size: 15px; }
+  button, .btn {
+    display: block; width: 100%; padding: 14px 18px; margin: 0 0 10px;
+    font-size: 16px; font-weight: 600; text-align: center; text-decoration: none;
+    border: 0; border-radius: 10px; cursor: pointer;
+    background: #2aabee; color: #fff;
+  }
+  .btn.alt { background: #2b3a49; color: #dbe4ec; font-weight: 500; }
+  .code {
+    display: block; padding: 12px; margin: 0 0 10px; word-break: break-all;
+    background: #0f151c; border: 1px solid #2b3a49; border-radius: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+  }
+  .note { font-size: 13px; color: #8b98a5; margin-top: 16px; }
+  .ok { color: #4cd07d; font-weight: 600; }
+  .err { color: #ff7a7a; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card" id="app"></div>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get("code");
+  var state = params.get("state") || "";
+  var clientId = params.get("client_id") || "";
+  var redirectUri = params.get("redirect_uri") || "";
+  var scope = params.get("scope") || [
+    "https://www.googleapis.com/auth/classroom.courses.readonly",
+    "https://www.googleapis.com/auth/classroom.rosters.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+    "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly",
+    "https://www.googleapis.com/auth/classroom.topics.readonly"
+  ].join(" ");
+
+  var app = document.getElementById("app");
+
+  function esc(value) {
+    return String(value).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  function telegram() {
+    try {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+        return window.Telegram.WebApp;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function authUrl() {
+    var url = "https://accounts.google.com/o/oauth2/auth" +
+      "?response_type=code" +
+      "&client_id=" + encodeURIComponent(clientId) +
+      "&redirect_uri=" + encodeURIComponent(redirectUri) +
+      "&scope=" + encodeURIComponent(scope) +
+      "&access_type=offline" +
+      "&prompt=consent" +
+      "&state=" + encodeURIComponent(state);
+    return url;
+  }
+
+  if (code) {
+    var webApp = telegram();
+    if (webApp) {
+      app.innerHTML =
+        "<h1 class=\"ok\">Підключено</h1>" +
+        "<p>Повернись у Telegram — бот вже підключений до Classroom.</p>";
+      try {
+        webApp.sendData(JSON.stringify({ code: code, state: state }));
+      } catch (e) {
+        app.innerHTML =
+          "<h1 class=\"err\">Не вдалося передати код</h1>" +
+          "<p>Скопіюй код нижче і надішли його боту в чат.</p>" +
+          "<code class=\"code\" id=\"code\">" + esc(code) + "</code>";
+      }
+    } else {
+      app.innerHTML =
+        "<h1>Код підключення</h1>" +
+        "<p>Скопіюй код і вставь його в чат з ботом — він підключить Classroom.</p>" +
+        "<code class=\"code\" id=\"code\">" + esc(code) + "</code>" +
+        "<button id=\"copy\">Скопіювати код</button>" +
+        "<p class=\"note\">Ця сторінка відкрита поза Telegram, тому код потрібно вставити вручну.</p>";
+      document.getElementById("copy").addEventListener("click", function () {
+        var text = document.getElementById("code").textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text);
+        } else {
+          var area = document.createElement("textarea");
+          area.value = text;
+          document.body.appendChild(area);
+          area.select();
+          document.execCommand("copy");
+          document.body.removeChild(area);
+        }
+        this.textContent = "Скопійовано ✓";
+      });
+    }
+  } else if (!clientId || !redirectUri) {
+    app.innerHTML =
+      "<h1 class=\"err\">Неправильне посилання</h1>" +
+      "<p>Відкрий сторінку через кнопку в Telegram-боті — тоді підставиться все потрібне.</p>";
+  } else {
+    var webApp = telegram();
+    app.innerHTML =
+      "<h1>Підключити Classroom</h1>" +
+      "<p>Натисни кнопку — відкриється Google, де треба залогінитись і дозволити доступ.</p>" +
+      "<button id=\"go\">Підключити Classroom</button>" +
+      "<a class=\"btn alt\" id=\"external\" href=\"" + esc(authUrl()) + "\">Відкрити в браузері</a>";
+    document.getElementById("go").addEventListener("click", function () {
+      window.location.href = authUrl();
+    });
+    if (webApp) {
+      webApp.ready();
+      webApp.expand();
+    }
+  }
+})();
+</script>
+</body>
+</html>
